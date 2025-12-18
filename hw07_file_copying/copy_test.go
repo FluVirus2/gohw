@@ -1,11 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func SameFiles(f1, f2 *os.File) (bool, error) {
@@ -14,12 +16,12 @@ func SameFiles(f1, f2 *os.File) (bool, error) {
 
 	for {
 		n1, err1 := f1.Read(buf1)
-		if err1 != nil && err1 != io.EOF {
+		if err1 != nil && !errors.Is(err1, io.EOF) {
 			return false, fmt.Errorf("ошибка чтения из первого файла: %w", err1)
 		}
 
 		n2, err2 := f2.Read(buf2)
-		if err2 != nil && err2 != io.EOF {
+		if err2 != nil && !errors.Is(err2, io.EOF) {
 			return false, fmt.Errorf("ошибка чтения из второго файла: %w", err2)
 		}
 
@@ -33,11 +35,11 @@ func SameFiles(f1, f2 *os.File) (bool, error) {
 			}
 		}
 
-		if err1 == io.EOF && err2 == io.EOF {
+		if errors.Is(err1, io.EOF) && errors.Is(err2, io.EOF) {
 			return true, nil
 		}
 
-		if (err1 == io.EOF && err2 != io.EOF) || (err1 != io.EOF && err2 == io.EOF) {
+		if (errors.Is(err1, io.EOF) && !errors.Is(err2, io.EOF)) || (!errors.Is(err1, io.EOF) && errors.Is(err2, io.EOF)) {
 			return false, nil
 		}
 	}

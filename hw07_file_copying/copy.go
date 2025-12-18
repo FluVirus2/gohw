@@ -88,7 +88,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	IndicateStart()
 	_, err = io.CopyN(progressWriter, inputFile, limit)
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("error during copy: %w", err)
 	}
 
