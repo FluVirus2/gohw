@@ -110,7 +110,7 @@ func TestCopyOk(t *testing.T) {
 			Limit:      1000,
 			Offset:     6000,
 
-			ExpectedPath: "testdata/out_offset100_limit1000.txt",
+			ExpectedPath: "testdata/out_offset6000_limit1000.txt",
 		},
 		{
 			Name:       "empty file",
