@@ -68,3 +68,65 @@ func TestRun(t *testing.T) {
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
 	})
 }
+
+func TestRunNonPositiveM(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	makeTasks := func(outTasksRun *int64) []Task {
+		count := 50
+
+		var tasks []Task
+		for range count {
+			tasks = append(tasks, func() error {
+				defer atomic.AddInt64(outTasksRun, 1)
+
+				time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
+				if rand.Intn(3) == 1 {
+					return errors.New("error")
+				}
+
+				return nil
+			})
+		}
+
+		return tasks
+	}
+
+	type TestCase struct {
+		Name        string
+		M           int
+		N           int
+		Tasks       func(out *int64) []Task
+		ExpectedRun int64
+		ExpectedErr error
+	}
+
+	testCases := []TestCase{
+		{
+			Name:        "zero",
+			M:           0,
+			N:           13,
+			Tasks:       makeTasks,
+			ExpectedRun: 0,
+			ExpectedErr: ErrErrorsLimitExceeded,
+		},
+		{
+			Name:        "negative",
+			M:           -1,
+			N:           13,
+			Tasks:       makeTasks,
+			ExpectedRun: 0,
+			ExpectedErr: ErrErrorsLimitExceeded,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			var actualRun int64
+			err := Run(tc.Tasks(&actualRun), tc.N, tc.M)
+
+			require.ErrorIs(t, tc.ExpectedErr, err)
+			require.Equal(t, tc.ExpectedRun, actualRun)
+		})
+	}
+}
