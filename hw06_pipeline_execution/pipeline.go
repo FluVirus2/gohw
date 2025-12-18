@@ -14,6 +14,7 @@ func RunStage(in In, out Bi, done In) {
 	for {
 		select {
 		case <-done:
+			//nolint:revive
 			for range in {
 			}
 			return
